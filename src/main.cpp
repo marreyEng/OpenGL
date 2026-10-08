@@ -9,27 +9,26 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 
 //Wireframe render
-const bool wireframe_render = false;
+const bool wireframe = false;
 // resolution
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // vertex data
-const float vertices[] = {
-    0.5f,  0.5f, 0.0f,  // top right
-    0.5f, -0.5f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f,  // bottom left
-    -0.5f,  0.5f, 0.0f   // top left 
+const float vertices_a[] = {
+     0.1f, 0.1f,0.0f,
+     0.4f, 0.1f,0.0f,
+     0.1f, 0.4f,0.0f
 };
-const unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,  // 1st Triangle
-    1, 2, 3   // 2nd Triangle
+const float vertices_b[] = {
+    -0.1f,-0.1f,0.0f,
+    -0.4f,-0.1f,0.0f,
+    -0.1f,-0.4f,0.0f,
 };
-    // ------------------------------------------------------------------
 
 const char *vertexShaderSource = 
 "#version 330 core\n"
-"layout (location = 1) in vec3 aPos;\n"
+"layout (location = 0) in vec3 aPos;\n"
 "void main()\n"
 "{\n"
 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
@@ -51,7 +50,6 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // ------------------------------
-
     // glfw window creation
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
@@ -63,7 +61,6 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     // --------------------
-
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -71,7 +68,6 @@ int main()
         return -1;
     }
     // ---------------------------------------
-
     // Check VAO capacity
     int maxAttributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttributes);
@@ -79,7 +75,6 @@ int main()
     // ------
 
 
-    // build and compile shader program
     // COMPILE vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -123,42 +118,38 @@ int main()
 
 
     //Generate Verex Buffer Object
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
+    unsigned int VBO_a, VBO_b;
+    glGenBuffers(1, &VBO_a);
+    glGenBuffers(1, &VBO_b);
+
     //Generate Vertex Array Object
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
+    unsigned int VAO_a, VAO_b;
+    glGenVertexArrays(1, &VAO_a);
+    glGenVertexArrays(1, &VAO_b);
     //Generate Entity Buffer Object
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
 
     // VAO first
-    glBindVertexArray(VAO);
-    // Bind VBO and EBO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // Fill VBO and EBO
-    glBufferData(GL_ARRAY_BUFFER,         sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices),   indices, GL_STATIC_DRAW);
-    // ------
-
-    // place info into binded VAO slot and enable it
-    const int  VAO_index = 1;
-    glVertexAttribPointer(VAO_index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // VBO is saved into VAO slot
-    glEnableVertexAttribArray(VAO_index);
-    //Unbind the VAO
-    glBindVertexArray(0); //Ubinding saves info in VAO
-    // ------
-
-    // Unbind VBO as VAO has info about it
+    glBindVertexArray(VAO_a);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_a);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_a), vertices_a, GL_STATIC_DRAW);
+    const int  VAO_index_a = 0;
+    glVertexAttribPointer(VAO_index_a, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0); // VBO is saved into VAO slot
+    glEnableVertexAttribArray(VAO_index_a);
+    glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    //unbind the EBO as VAO sealed info about it
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); 
-    // ------
     
+    glBindVertexArray(VAO_b);   
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_b);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_b), vertices_b, GL_STATIC_DRAW);
+    const int VAO_index_b = 0;
+    glVertexAttribPointer(VAO_index_b, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(VAO_index_b);
+    glBindVertexArray(0); //Ubinding saves info in VAO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    //Setup way of render
-    if(wireframe_render){
+
+    //Setup wireframe 
+    if(wireframe){
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 
@@ -167,25 +158,18 @@ int main()
     {
         // input
         processInput(window);
-        // -----
-        
-        // Clearing up
+        // Cleaning up
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        // ------
-        
         // Set the shaders program
         glUseProgram(shaderProgram);
-        //-------
+
 
         // Render
-        // Bind the VAO
-        glBindVertexArray(VAO);
-        // Draw
-            // glDrawArrays(GL_TRIANGLES, 0, 6);
-            // or
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        //Unbind th VAO
+        glBindVertexArray(VAO_a);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(VAO_b);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
         // ------
         
@@ -197,9 +181,10 @@ int main()
     // -----------
 
     // optional: de-allocate all resources once they've outlived their purpose:
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    glDeleteVertexArrays(1, &VAO_a);
+    glDeleteVertexArrays(1, &VAO_b);
+    glDeleteBuffers(1, &VBO_a);
+    glDeleteBuffers(1, &VBO_b);
     glDeleteProgram(shaderProgram);
     // ------------------------------------------------------------------------
 
