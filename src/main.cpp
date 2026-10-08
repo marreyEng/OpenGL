@@ -8,25 +8,40 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 
-// settings
+//Wireframe render
+const bool wireframe_render = false;
+// resolution
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+// vertex data
+const float vertices[] = {
+    0.5f,  0.5f, 0.0f,  // top right
+    0.5f, -0.5f, 0.0f,  // bottom right
+    -0.5f, -0.5f, 0.0f,  // bottom left
+    -0.5f,  0.5f, 0.0f   // top left 
+};
+const unsigned int indices[] = {  // note that we start from 0!
+    0, 1, 3,  // 1st Triangle
+    1, 2, 3   // 2nd Triangle
+};
+    // ------------------------------------------------------------------
+
 const char *vertexShaderSource = 
-    "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+"#version 330 core\n"
+"layout (location = 1) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
 
 const char *fragmentShaderSource = 
-    "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 0.3f);\n"
-    "}\n\0";
+"#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, 0.5f, 0.2f, 0.3f);\n"
+"}\n\0";
 
 int main()
 {
@@ -56,6 +71,12 @@ int main()
         return -1;
     }
     // ---------------------------------------
+
+    // Check VAO capacity
+    int maxAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttributes);
+    std::cout << "VAO capacity: " << maxAttributes << std::endl;
+    // ------
 
 
     // build and compile shader program
@@ -99,19 +120,7 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     // ------------------------------------
-    
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    float vertices[] = {
-        0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left 
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 3,  // first Triangle
-        1, 2, 3   // second Triangle
-    };
-    // ------------------------------------------------------------------
+
 
     //Generate Verex Buffer Object
     unsigned int VBO;
@@ -123,38 +132,35 @@ int main()
     unsigned int EBO;
     glGenBuffers(1, &EBO);
 
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    // VAO first
     glBindVertexArray(VAO);
-
-    // Bind VBO and fill it
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); //Bind buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // ------
-
-    // Bind EBO and fill it
+    // Bind VBO and EBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);//Setup VAO with binded buffer
+    // Fill VBO and EBO
+    glBufferData(GL_ARRAY_BUFFER,         sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices),   indices, GL_STATIC_DRAW);
     // ------
 
-    // Fill binded VAO
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    // place info into binded VAO slot and enable it
+    const int  VAO_index = 1;
+    glVertexAttribPointer(VAO_index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // VBO is saved into VAO slot
+    glEnableVertexAttribArray(VAO_index);
+    //Unbind the VAO
+    glBindVertexArray(0); //Ubinding saves info in VAO
     // ------
 
     // Unbind VBO as VAO has info about it
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //unbind the EBO as VAO sealed info about it
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); 
     // ------
-
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Unbind the VAO
-    glBindVertexArray(0); 
-
+    
 
     //Setup way of render
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+    if(wireframe_render){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -175,8 +181,9 @@ int main()
         // Render
         // Bind the VAO
         glBindVertexArray(VAO);
-            //glDrawArrays(GL_TRIANGLES, 0, 6);
-            //Draw
+        // Draw
+            // glDrawArrays(GL_TRIANGLES, 0, 6);
+            // or
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //Unbind th VAO
         glBindVertexArray(0);
