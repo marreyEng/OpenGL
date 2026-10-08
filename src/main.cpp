@@ -190,7 +190,7 @@ int main()
         // Draw
         #if(1)
             glDrawArrays(GL_TRIANGLES, 0, 3);
-            glDrawArrays(GL_TRIANGLES, 2, 3);
+            glDrawArrays(GL_TRIANGLES, 3, 3);
         #else
             // or
             //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
