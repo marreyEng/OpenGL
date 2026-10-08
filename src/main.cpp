@@ -16,10 +16,13 @@ const unsigned int SCR_HEIGHT = 600;
 
 // vertex data
 const float vertices[] = {
-    0.5f,  0.5f, 0.0f,  // top right
-    0.5f, -0.5f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f,  // bottom left
-    -0.5f,  0.5f, 0.0f   // top left 
+     0.1f, 0.1f,0.0f,
+     0.4f, 0.1f,0.0f,
+     0.1f, 0.4f,0.0f,
+
+    -0.1f,-0.1f,0.0f,
+    -0.4f,-0.1f,0.0f,
+    -0.1f,-0.4f,0.0f,
 };
 const unsigned int indices[] = {  // note that we start from 0!
     0, 1, 3,  // 1st Triangle
@@ -125,9 +128,12 @@ int main()
     //Generate Verex Buffer Object
     unsigned int VBO;
     glGenBuffers(1, &VBO);
+
     //Generate Vertex Array Object
     unsigned int VAO;
+    unsigned int VAO_ab;
     glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAO_ab);
     //Generate Entity Buffer Object
     unsigned int EBO;
     glGenBuffers(1, &EBO);
@@ -182,9 +188,13 @@ int main()
         // Bind the VAO
         glBindVertexArray(VAO);
         // Draw
-            // glDrawArrays(GL_TRIANGLES, 0, 6);
+        #if(1)
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glDrawArrays(GL_TRIANGLES, 2, 3);
+        #else
             // or
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        #endif
         //Unbind th VAO
         glBindVertexArray(0);
         // ------
