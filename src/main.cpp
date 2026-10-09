@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <cmath>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -189,7 +190,12 @@ int main()
         // ------
         
         // Set the shaders program
+        float timeValue = glfwGetTime();
+        float redValue = (std::sin(timeValue) + 1) / 2.f;
+        int vertexAlphaLocation = glGetUniformLocation(shaderProgram, "redValue");
         glUseProgram(shaderProgram);
+        std::cerr << redValue;
+        glUniform4f(vertexAlphaLocation, redValue, 0.f, 0.f, 0.f);
         //-------
 
         // Render
