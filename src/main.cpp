@@ -16,10 +16,14 @@ const unsigned int SCR_HEIGHT = 600;
 
 // vertex data
 const float vertices[] = {
-    0.5f,  0.5f, 0.0f,  // top right
-    0.5f, -0.5f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f,  // bottom left
-    -0.5f,  0.5f, 0.0f   // top left 
+    0.5f,  0.5f, 0.0f,  // Position 0
+        1.0f,  0.0f, 0.0f,  // Color 0
+    0.5f, -0.5f, 0.0f,  // Position 1
+        0.0f,  1.0f, 0.0f,  // Color 1 
+    -0.5f, -0.5f, 0.0f, // Position 2
+        0.0f,  0.0f, 1.0f,  // Color 2
+    -0.5f,  0.5f, 0.0f,  // Position 3
+        1.0f,  1.0f, 1.0f  // Color 3 
 };
 const unsigned int indices[] = {  // note that we start from 0!
     0, 1, 3,  // 1st Triangle
@@ -29,18 +33,23 @@ const unsigned int indices[] = {  // note that we start from 0!
 
 const char *vertexShaderSource = 
 "#version 330 core\n"
-"layout (location = 1) in vec3 aPos;\n"
+"layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 aCol;\n"
+"out vec3 vertex2fragment_color;\n"
 "void main()\n"
 "{\n"
 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"   vertex2fragment_color = aCol;\n"
 "}\0";
 
 const char *fragmentShaderSource = 
 "#version 330 core\n"
+"in vec3 vertex2fragment_color;\n"
 "out vec4 FragColor;\n"
 "void main()\n"
 "{\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 0.3f);\n"
+// "   FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);\n"
+"   FragColor = vec4(vertex2fragment_color.x, vertex2fragment_color.y, vertex2fragment_color.z, 1.0f);\n"
 "}\n\0";
 
 int main()
@@ -131,7 +140,7 @@ int main()
     //Generate Entity Buffer Object
     unsigned int EBO;
     glGenBuffers(1, &EBO);
-
+    
     // VAO first
     glBindVertexArray(VAO);
     // Bind VBO and EBO
@@ -141,11 +150,14 @@ int main()
     glBufferData(GL_ARRAY_BUFFER,         sizeof(vertices), vertices, GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices),   indices, GL_STATIC_DRAW);
     // ------
-
+    
     // place info into binded VAO slot and enable it
-    const int  VAO_index = 1;
-    glVertexAttribPointer(VAO_index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // VBO is saved into VAO slot
-    glEnableVertexAttribArray(VAO_index);
+    const int  PositionIndex = 0;
+    const int  ColorIndex = 1;
+    glVertexAttribPointer(PositionIndex, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // VBO is saved into VAO slot during this 
+    glEnableVertexAttribArray(PositionIndex);
+    glVertexAttribPointer(ColorIndex, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)12); // VBO is saved into VAO slot during this 
+    glEnableVertexAttribArray(ColorIndex);
     //Unbind the VAO
     glBindVertexArray(0); //Ubinding saves info in VAO
     // ------
@@ -196,7 +208,7 @@ int main()
     }
     // -----------
 
-    // optional: de-allocate all resources once they've outlived their purpose:
+    // free everything
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
